@@ -116,14 +116,16 @@ def generate_newsletter_content(segment_description, part, platform):
     prompt = f"""
     Please personalize the following HTML newsletter content to fit the specified segment. 
     Ensure that the structure and content are similar in length and style to the original.
-    Do not add any new parts or text.
-    Do not change addresses, links, or buttons.
-    Do not include any comments or explanations in the output, only the personalized HTML content.
+    Do not add any new parts or text!
+    Do not change addresses, links, or buttons!
+    Do not include any comments or explanations in the output, only the personalized HTML content!
+    Make newsletter ready to send!
 
     Newsletter HTML Content:
     {part}
 
     Ensure the tone matches with the segment description {segment_description}.
+    Do not address them by the segment description!
     """
 
     if count_tokens(prompt) > 4096:
