@@ -400,12 +400,12 @@ def display_generated_newsletters():
                 scrolling=True,
             )
             change_button_color("#FFFFFF", "#1EC71E", "#1EC71E")
-            if st.button("Allow"):
+            if st.button("Allow", help="Save the newsletter to Keboola."):
                 save_to_keboola(
                     st.session_state.personalized_newsletters[selected_segment],
                     selected_segment,
                 )
-            if st.button("Repeat"):
+            if st.button("Repeat", help="Regenerate the newsletter for the selected segment."):
                 regenerate_newsletter(
                     selected_segment,
                     st.session_state.customer_segments[
