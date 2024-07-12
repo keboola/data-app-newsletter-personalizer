@@ -1,0 +1,5 @@
+streamlit
+openai
+git+https://github.com/keboola/sapi-python-client.git
+beautifulsoup4
+tenacity
