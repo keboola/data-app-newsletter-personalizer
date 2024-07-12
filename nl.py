@@ -121,6 +121,7 @@ def generate_newsletter_content(segment_description, part, platform):
     {part}
 
     Instructions:
+    0. Do not change structure, keep all parts of original newsletter.
     1. Do not add any new parts or text.
     2. Do not change addresses, links, or buttons.
     3. Do not include any comments or explanations in the output, only the personalized HTML content.
@@ -129,7 +130,7 @@ def generate_newsletter_content(segment_description, part, platform):
     6. Do not address them by the segment description.
     7. Consider the platform if specified: {platform}.
     8. Ensure the content is engaging and relevant to the segment.
-    9. Make sure the content is the same lenght like in original.
+    9. Make sure the content is the same length like in original.
     """
 
     if count_tokens(prompt) > 4096:
