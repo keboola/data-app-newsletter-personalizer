@@ -114,18 +114,20 @@ def count_tokens(text):
 @st.cache_data(ttl=7200, show_spinner=False)
 def generate_newsletter_content(segment_description, part, platform):
     prompt = f"""
-    Please personalize the following HTML newsletter content to fit the specified segment. 
+    Personalize the following HTML newsletter content to fit the specified segment. 
     Ensure that the structure and content are similar in length and style to the original.
-    Do not add any new parts or text!
-    Do not change addresses, links, or buttons!
-    Do not include any comments or explanations in the output, only the personalized HTML content!
-    Make newsletter ready to send!
 
     Newsletter HTML Content:
     {part}
 
-    Ensure the tone matches with the segment description {segment_description}.
-    Do not address them by the segment description!
+    Instructions:
+    1. Do not add any new parts or text.
+    2. Do not change addresses, links, or buttons.
+    3. Do not include any comments or explanations in the output, only the personalized HTML content.
+    4. Make the newsletter ready to send.
+    5. Ensure the tone matches the segment description: {segment_description}.
+    6. Do not address them by the segment description.
+    7. Consider the platform if specified: {platform}.
     """
 
     if count_tokens(prompt) > 4096:
