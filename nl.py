@@ -128,6 +128,8 @@ def generate_newsletter_content(segment_description, part, platform):
     5. Ensure the tone matches the segment description: {segment_description}.
     6. Do not address them by the segment description.
     7. Consider the platform if specified: {platform}.
+    8. Ensure the content is engaging and relevant to the segment.
+    9. Make sure the content is the same lenght like in original.
     """
 
     if count_tokens(prompt) > 4096:
@@ -393,9 +395,6 @@ def display_generated_newsletters():
             st.markdown("### Personalized Newsletter")
             selected_segment = st.selectbox(
                 "Select Segment", list(st.session_state.personalized_newsletters.keys())
-            )
-            st.markdown(
-                f"Segment Description: {st.session_state.customer_segments[int(selected_segment.split(' ')[1]) - 1]}"
             )
             components.html(
                 st.session_state.personalized_newsletters[selected_segment],
