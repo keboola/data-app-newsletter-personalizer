@@ -30,7 +30,7 @@ def change_button_color(font_color, background_color, border_color):
 
 
 # Function to display logo
-LOGO_IMAGE_PATH = os.path.abspath("./static/keboola.png")
+LOGO_IMAGE_PATH = os.path.abspath("./app/static/keboola.png")
 
 # Set page title and icon
 st.set_page_config(page_title="NL Data app", page_icon=LOGO_IMAGE_PATH, layout="wide")
