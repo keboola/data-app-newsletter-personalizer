@@ -5,7 +5,7 @@ import os
 import re
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
 
 # Load the OpenAI API key and Keboola credentials from secrets
 token = st.secrets["storage_token"]
@@ -110,45 +110,47 @@ def count_tokens(text):
     return len(text.split())
 
 
+# Function to generate personalized newsletter content
 @st.cache_data(ttl=7200, show_spinner=False)
 def generate_newsletter_content(segment_description, part, platform):
     prompt = f"""
     Please personalize the following HTML newsletter content to fit the specified segment. 
     Ensure that the structure and content are similar in length and style to the original.
-    Dont add any new parts or text!
-    Dont change adresses, links or buttons!
-
-    Segment Description: {segment_description}
+    Do not add any new parts or text.
+    Do not change addresses, links, or buttons.
+    Do not include any comments or explanations in the output, only the personalized HTML content.
 
     Newsletter HTML Content:
     {part}
 
-    Platform: {platform}
-
     Ensure the tone matches with the segment description {segment_description}.
-    Do not include any comments or explanations in the output, only the personalized HTML content.
     """
 
     if count_tokens(prompt) > 4096:
-        st.warning("The combined prompt exceeds the maximum token limit. Please shorten the input.")
+        st.warning(
+            "The combined prompt exceeds the maximum token limit. Please shorten the input."
+        )
         return ""
 
     try:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
+            temperature=0.7,
         )
         return response.choices[0].message.content
     except Exception as e:
         error_message = str(e)
         if "insufficient_quota" in error_message:
-            st.error("You have exceeded your OpenAI API quota. Please check your plan and billing details.")
+            st.error(
+                "You have exceeded your OpenAI API quota. Please check your plan and billing details."
+            )
         else:
             st.error(f"An error occurred: {error_message}")
         return ""
 
 
+# Function to process parts of the HTML content
 def process_parts(segment_description, parts, platform):
     personalized_content = ""
     total_parts = len(parts)
@@ -161,34 +163,39 @@ def process_parts(segment_description, parts, platform):
             personalized_content += content
             progress_percentage = (i + 1) / total_parts
             progress_bar.progress(progress_percentage)
-            status_text.text(f"Completed part {i + 1}/{total_parts}")  # Update status text
+            status_text.text(
+                f"Completed part {i + 1}/{total_parts}"
+            )  # Update status text
         else:
             break
     return personalized_content
 
 
+# Function to split HTML content into parts
 def split_html(soup, max_length):
     html_str = str(soup)
     parts = re.findall(".{1,%d}(?:<[^>]*>|$)" % max_length, html_str)
     return parts
 
 
+# Function to process the HTML file and generate personalized content
 def process_file(segment_description, html_content, platform):
     soup = BeautifulSoup(html_content, "html.parser")
-    buttons = soup.find_all('button')
+    buttons = soup.find_all("button")
     for button in buttons:
-        button.replace_with(f'BUTTON_PLACEHOLDER_{buttons.index(button)}')
+        button.replace_with(f"BUTTON_PLACEHOLDER_{buttons.index(button)}")
     parts = split_html(soup, 6000)
     personalized_content = process_parts(segment_description, parts, platform)
     personalized_soup = BeautifulSoup(personalized_content, "html.parser")
     for button in buttons:
-        placeholder = f'BUTTON_PLACEHOLDER_{buttons.index(button)}'
+        placeholder = f"BUTTON_PLACEHOLDER_{buttons.index(button)}"
         placeholder_tag = personalized_soup.find(text=placeholder)
         if placeholder_tag:
             placeholder_tag.replace_with(button)
     return str(personalized_soup)
 
 
+# Function to extract text from HTML content
 def extract_text_from_html(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     text_elements = soup.find_all(string=True)
@@ -196,6 +203,7 @@ def extract_text_from_html(html_content):
     return text_content
 
 
+# Function to replace text in HTML content
 def replace_text_in_html(html_content, modified_texts):
     soup = BeautifulSoup(html_content, "html.parser")
     for text_element in soup.find_all(string=True):
@@ -224,15 +232,19 @@ def add_customer_segment():
 # Display customer segments input fields
 st.sidebar.markdown("**Customer segments:**")
 for i, segment in enumerate(st.session_state.customer_segments):
-    st.session_state.customer_segments[i] = st.sidebar.text_input(f"Segment {i + 1}", value=segment, key=f"segment_{i}")
+    st.session_state.customer_segments[i] = st.sidebar.text_input(
+        f"Segment {i + 1}", value=segment, key=f"segment_{i}"
+    )
 
 # Button to add new segment
 if len(st.session_state.customer_segments) > 0:
     st.sidebar.button("Add Segment", on_click=add_customer_segment)
 
 # Input for platform (moved below segments)
-platform = st.sidebar.text_input("**Used platform for emailing:**",
-                                 help="Recommended specify the platform used for emailing (e.g., Mailchimp, SendGrid).")
+platform = st.sidebar.text_input(
+    "**Used platform for emailing:**",
+    help="Recommended specify the platform used for emailing (e.g., Mailchimp, SendGrid).",
+)
 
 # Initialize session state for personalized newsletters
 if "personalized_newsletters" not in st.session_state:
@@ -278,16 +290,18 @@ def regenerate_newsletter(segment_name, segment_description, platform, newslette
 
     # Split the HTML content into parts
     soup = BeautifulSoup(newsletter_html, "html.parser")
-    buttons = soup.find_all('button')
+    buttons = soup.find_all("button")
     for button in buttons:
-        button.replace_with(f'BUTTON_PLACEHOLDER_{buttons.index(button)}')
+        button.replace_with(f"BUTTON_PLACEHOLDER_{buttons.index(button)}")
     parts = split_html(soup, 6000)
 
     # Regenerate the personalized content with progress
     total_parts = len(parts)
     personalized_content = ""
     for i, part in enumerate(parts):
-        content = generate_newsletter_content(segment_description.strip(), part, platform)
+        content = generate_newsletter_content(
+            segment_description.strip(), part, platform
+        )
         if content:
             personalized_content += content
             progress_percentage = (i + 1) / total_parts
@@ -299,7 +313,7 @@ def regenerate_newsletter(segment_name, segment_description, platform, newslette
 
     personalized_soup = BeautifulSoup(personalized_content, "html.parser")
     for button in buttons:
-        placeholder = f'BUTTON_PLACEHOLDER_{buttons.index(button)}'
+        placeholder = f"BUTTON_PLACEHOLDER_{buttons.index(button)}"
         placeholder_tag = personalized_soup.find(text=placeholder)
         if placeholder_tag:
             placeholder_tag.replace_with(button)
@@ -312,10 +326,13 @@ def regenerate_newsletter(segment_name, segment_description, platform, newslette
     progress_bar.progress(1.0)
     status_text.text("Regeneration completed!")
 
+
 # Button to generate newsletters
 if st.sidebar.button("Generate Personalized Newsletters"):
     if not uploaded_file:
-        st.warning("First of all you need to upload the original newsletter.", icon="⚠️")
+        st.warning(
+            "First of all you need to upload the original newsletter.", icon="⚠️"
+        )
     else:
         try:
             newsletter_html = uploaded_file.read().decode("utf-8")
@@ -328,22 +345,37 @@ if st.sidebar.button("Generate Personalized Newsletters"):
                 for idx, segment in enumerate(st.session_state.customer_segments):
                     if segment.strip():
                         overall_status_text.text(
-                            f"Processing Segment {idx + 1}/{total_segments}...")  # Update overall status
-                        personalized_html = process_file(segment.strip(), newsletter_html, platform)
-                        st.session_state.personalized_newsletters[f"Segment {idx + 1}"] = personalized_html
-                        overall_progress_bar.progress((idx + 1) / total_segments)  # Update overall progress
+                            f"Processing Segment {idx + 1}/{total_segments}..."
+                        )  # Update overall status
+                        personalized_html = process_file(
+                            segment.strip(), newsletter_html, platform
+                        )
+                        st.session_state.personalized_newsletters[
+                            f"Segment {idx + 1}"
+                        ] = personalized_html
+                        overall_progress_bar.progress(
+                            (idx + 1) / total_segments
+                        )  # Update overall progress
                         overall_status_text.text(
-                            f"Completed Segment {idx + 1}/{total_segments}")  # Update overall status
+                            f"Completed Segment {idx + 1}/{total_segments}"
+                        )  # Update overall status
 
-                overall_progress_bar.progress(1.0)  # Ensure progress bar reaches 100% at the end
-                overall_status_text.text("All segments completed!")  # Final status update
+                overall_progress_bar.progress(
+                    1.0
+                )  # Ensure progress bar reaches 100% at the end
+                overall_status_text.text(
+                    "All segments completed!"
+                )  # Final status update
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
 
 # Function to display generated newsletters
 def display_generated_newsletters():
-    if st.session_state.original_newsletter and st.session_state.personalized_newsletters:
+    if (
+        st.session_state.original_newsletter
+        and st.session_state.personalized_newsletters
+    ):
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("### Original Newsletter")
@@ -356,11 +388,11 @@ def display_generated_newsletters():
         with col2:
             st.markdown("### Personalized Newsletter")
             selected_segment = st.selectbox(
-                "Select Segment",
-                list(st.session_state.personalized_newsletters.keys())
+                "Select Segment", list(st.session_state.personalized_newsletters.keys())
             )
             st.markdown(
-                f"Segment Description: {st.session_state.customer_segments[int(selected_segment.split(' ')[1]) - 1]}")
+                f"Segment Description: {st.session_state.customer_segments[int(selected_segment.split(' ')[1]) - 1]}"
+            )
             components.html(
                 st.session_state.personalized_newsletters[selected_segment],
                 width=600,
@@ -369,11 +401,20 @@ def display_generated_newsletters():
             )
             change_button_color("#FFFFFF", "#1EC71E", "#1EC71E")
             if st.button("Allow"):
-                save_to_keboola(st.session_state.personalized_newsletters[selected_segment], selected_segment)
+                save_to_keboola(
+                    st.session_state.personalized_newsletters[selected_segment],
+                    selected_segment,
+                )
             if st.button("Repeat"):
-                regenerate_newsletter(selected_segment,
-                                      st.session_state.customer_segments[int(selected_segment.split(' ')[1]) - 1],
-                                      platform, st.session_state.original_newsletter)
+                regenerate_newsletter(
+                    selected_segment,
+                    st.session_state.customer_segments[
+                        int(selected_segment.split(" ")[1]) - 1
+                    ],
+                    platform,
+                    st.session_state.original_newsletter,
+                )
+
 
 # Display generated newsletters
 display_generated_newsletters()
