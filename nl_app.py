@@ -31,7 +31,7 @@ def change_button_color(font_color: str, background_color: str, border_color: st
     st.markdown(button_style, unsafe_allow_html=True)
 
 
-LOGO_IMAGE_PATH = os.path.abspath("./static/keboola.png")
+LOGO_IMAGE_PATH = os.path.abspath("./app/static/keboola.png")
 st.set_page_config(page_title="Newsletter Data app", layout="wide")
 
 
